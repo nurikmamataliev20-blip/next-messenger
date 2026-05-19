@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  name        String
+  avatar      String?
+  bio         String?
+  status      String   @default("Hey, I'm using this app!")
+  online      Boolean  @default(false)
+  lastSeen    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sentMessages     Message[]         @relation("SentMessages")
+  memberships      ChatMember[]
+  createdChats     Chat[]            @relation("CreatedChats")
+  notifications    Notification[]
+}
+
+model Chat {
+  id          String   @id @default(cuid())
+  type        ChatType
+  name        String?
+  avatar      String?
+  description String?
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator     User         @relation("CreatedChats", fields: [creatorId], references: [id])
+  members     ChatMember[]
+  messages    Message[]
+  topics      Topic[]
+}
+
+model Topic {
+  id        String   @id @default(cuid())
+  chatId    String
+  name      String
+  icon      String?
+  createdAt DateTime @default(now())
+
+  chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  messages  Message[]
+}
+
+model ChatMember {
+  id       String     @id @default(cuid())
+  chatId   String
+  userId   String
+  role     MemberRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
+
+  chat     Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  chatId      String
+  topicId     String?
+  senderId    String
+  type        MessageType @default(TEXT)
+  content     String
+  fileUrl     String?
+  fileName    String?
+  fileSize    Int?
+  mimeType    String?
+  duration    Int?
+  replyToId   String?
+  edited      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  chat        Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  topic       Topic?   @relation(fields: [topicId], references: [id])
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  replyTo     Message? @relation("Replies", fields: [replyToId], references: [id])
+  replies     Message[] @relation("Replies")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  data      Json?
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ChatType {
+  DIRECT
+  GROUP
+  SUPERGROUP
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
