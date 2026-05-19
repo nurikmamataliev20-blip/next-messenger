@@ -862,9 +862,49 @@ export default function HomePage() {
     setIsRecording(false);
   };
 
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const isResizing = useRef(false);
+
+  useEffect(() => {
+    const savedWidth = localStorage.getItem("sidebarWidth");
+    if (savedWidth) {
+      setSidebarWidth(Number(savedWidth));
+    }
+  }, []);
+
+  const startResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", stopResizing);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.current || !sidebarRef.current) return;
+    // Calculate new width based on cursor position relative to the sidebar's parent
+    const newWidth = e.clientX - (sidebarRef.current.parentElement?.getBoundingClientRect().left || 0);
+    if (newWidth >= 60 && newWidth <= 500) {
+      setSidebarWidth(newWidth);
+    }
+  };
+
+  const stopResizing = () => {
+    if (isResizing.current) {
+        isResizing.current = false;
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", stopResizing);
+        localStorage.setItem("sidebarWidth", String(sidebarWidth));
+    }
+  };
+
   return (
     <main className="flex h-screen w-full overflow-hidden bg-zinc-950">
-      <aside className="hidden w-full max-w-sm flex-col border-r border-white/10 bg-zinc-900/80 md:flex">
+      <aside 
+        ref={sidebarRef}
+        style={{ width: `${sidebarWidth}px`, minWidth: '60px' }}
+        className="flex flex-col border-r border-white/10 bg-zinc-900/80 shrink-0"
+      >
         <div className="border-b border-white/10 p-4">
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-lg font-semibold tracking-tight">Chats</h1>
@@ -988,7 +1028,11 @@ export default function HomePage() {
         </div>
       </aside>
 
-      <section className="flex h-screen flex-1 flex-col overflow-hidden bg-zinc-950">
+      <div
+        onMouseDown={startResizing}
+        className="w-1 cursor-col-resize bg-zinc-800 hover:bg-sky-500 transition-colors"
+      />
+      <section className="flex h-screen flex-1 flex-col overflow-hidden bg-zinc-950 min-w-0 min-w-0 min-w-0">
         <header className="flex items-center justify-between border-b border-white/10 bg-zinc-900/50 px-5 py-4 backdrop-blur">
           <div>
             <h2 className="text-sm font-semibold text-zinc-100">
@@ -1079,7 +1123,7 @@ export default function HomePage() {
                         key={message.id}
                         className={`flex w-full ${isMine ? "justify-end" : "justify-start"}`}
                       >
-                        <div className={`flex max-w-[80%] flex-col ${isMine ? "items-end" : "items-start"}`}>
+                        <div className={`flex max-w-[70%] flex-col min-w-0 overflow-hidden ${isMine ? "items-end" : "items-start"}`}>
                           {!isMine ? (
                             <div className="mb-1.5 flex items-center gap-2 px-1">
                               {message.sender.avatar ? (
@@ -1102,7 +1146,7 @@ export default function HomePage() {
                           ) : null}
 
                           <div
-                            className={`group relative rounded-2xl px-4 py-2.5 text-sm shadow ${
+                            className={`group relative rounded-2xl px-4 py-2.5 text-sm shadow overflow-hidden break-words overflow-hidden break-words ${
                               isMine
                                 ? "bg-blue-600 text-white"
                                 : "bg-gray-700 text-zinc-100"
@@ -1146,10 +1190,10 @@ export default function HomePage() {
                             {message.type === "TEXT" && <p>{message.content}</p>}
                             {message.type === "IMAGE" && message.fileUrl && (
                               <img 
-                                src={message.fileUrl} 
-                                alt={message.fileName || 'Image'} 
-                                className="max-w-xs rounded-lg cursor-pointer"
                                 onClick={() => setLightboxImage(message.fileUrl)}
+                                src={message.fileUrl} 
+                                alt="Image"
+                                className="mt-2 max-w-full w-full cursor-pointer rounded-lg object-contain"
                               />
                             )}
                             {message.type === "VIDEO" && message.fileUrl && (
