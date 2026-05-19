@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await auth();
@@ -12,7 +12,7 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { chatId } = params;
+    const { chatId } = await params;
 
     // First, verify the user is part of the chat
     const chatMembership = await db.chatMember.findFirst({
