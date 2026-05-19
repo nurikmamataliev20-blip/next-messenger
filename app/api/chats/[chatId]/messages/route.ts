@@ -4,9 +4,9 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
 type Params = {
-  params: {
+  params: Promise<{
     chatId: string;
-  };
+  }>;
 };
 
 async function ensureMembership(chatId: string, userId: string) {
