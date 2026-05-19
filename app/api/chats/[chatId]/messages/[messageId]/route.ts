@@ -3,10 +3,10 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
 type Params = {
-  params: {
+  params: Promise<{
     chatId: string;
     messageId: string;
-  };
+  }>;
 };
 
 export async function DELETE(_req: Request, { params }: Params) {
