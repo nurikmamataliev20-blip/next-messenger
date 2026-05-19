@@ -3,9 +3,9 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
 type Params = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -17,7 +17,7 @@ export async function PATCH(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const notification = await db.notification.findFirst({
       where: { id, userId },
